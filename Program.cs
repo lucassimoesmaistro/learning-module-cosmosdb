@@ -126,6 +126,8 @@ namespace learning_module
             await this.ReplaceUserDocument("Users", "WebCustomers", yanhe);
 
             await this.DeleteUserDocument("Users", "WebCustomers", yanhe);
+
+            this.ExecuteSimpleQuery("Users", "WebCustomers");
         }
         public class User
         {
@@ -259,6 +261,37 @@ namespace learning_module
                     throw;
                 }
             }
+        }
+        private void ExecuteSimpleQuery(string databaseName, string collectionName)
+        {
+            // Set some common query options
+            FeedOptions queryOptions = new FeedOptions { MaxItemCount = -1, EnableCrossPartitionQuery = true };
+
+            // Here we find nelapin via their LastName
+            IQueryable<User> userQuery = this.client.CreateDocumentQuery<User>(
+                    UriFactory.CreateDocumentCollectionUri(databaseName, collectionName), queryOptions)
+                    .Where(u => u.LastName == "Pindakova");
+
+            // The query is executed synchronously here, but can also be executed asynchronously via the IDocumentQuery<T> interface
+            Console.WriteLine("Running LINQ query...");
+            foreach (User user in userQuery)
+            {
+                Console.WriteLine("\tRead {0}", user);
+            }
+
+            // Now execute the same query via direct SQL
+            IQueryable<User> userQueryInSql = this.client.CreateDocumentQuery<User>(
+                    UriFactory.CreateDocumentCollectionUri(databaseName, collectionName),
+                    "SELECT * FROM User WHERE User.lastName = 'Pindakova'", queryOptions );
+
+            Console.WriteLine("Running direct SQL query...");
+            foreach (User user in userQueryInSql)
+            {
+                    Console.WriteLine("\tRead {0}", user);
+            }
+
+            Console.WriteLine("Press any key to continue ...");
+            Console.ReadKey();
         }
     }
 }
